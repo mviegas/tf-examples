@@ -1,6 +1,6 @@
 # component - {provider}_{resource-type} - name
 resource "azurerm_resource_group" "blue_green" {
-  name     = var.resource_group
+  name     = local.resource_group
   location = "westeurope"
 
   tags = {
@@ -9,35 +9,51 @@ resource "azurerm_resource_group" "blue_green" {
 }
 
 resource "azurerm_app_service_plan" "blue_green" {
-  name                = var.app_service_plan
+  name                = local.app_service_plan
   location            = azurerm_resource_group.blue_green.location
   resource_group_name = azurerm_resource_group.blue_green.name
-  kind = "Linux"
+  kind                = "linux"
+  reserved            = true
 
   sku {
-    tier = "Standard"
-    size = "S1"
+    tier = local.sku_tiers[var.sku_size]
+    size = var.sku_size
   }
 }
 
 resource "azurerm_app_service" "blue_green" {
-  name                = var.app_service
-  location            = azurerm_resource_group.blue_green.location
-  resource_group_name = azurerm_resource_group.blue_green.name
-  app_service_plan_id = azurerm_app_service_plan.blue_green.id
+  name                    = local.app_service
+  location                = azurerm_resource_group.blue_green.location
+  resource_group_name     = azurerm_resource_group.blue_green.name
+  app_service_plan_id     = azurerm_app_service_plan.blue_green.id
+  https_only              = var.https_only
+  client_affinity_enabled = false
 
   site_config {
-    dotnet_framework_version = "v4.0"
-    scm_type                 = "LocalGit"
+    always_on        = local.always_on
+    linux_fx_version = local.linux_fx_version
   }
 
-  app_settings = {
-    "SOME_KEY" = "some-value"
+  app_settings = local.app_settings
+}
+
+resource "azurerm_app_service_slot" "blue_green" {
+    name                = "${azurerm_app_service.blue_green.name}-staging"
+    location            = azurerm_resource_group.blue_green.location
+    resource_group_name = azurerm_resource_group.blue_green.name
+    app_service_plan_id = azurerm_app_service_plan.blue_green.id
+    app_service_name    = azurerm_app_service.blue_green.name
+
+    site_config {
+    always_on        = false
+    linux_fx_version = local.linux_fx_version
   }
 
-  connection_string {
-    name  = "Database"
-    type  = "SQLServer"
-    value = "Server=some-server.mydomain.com;Integrated Security=SSPI"
-  }
+  app_settings = local.staging_app_settings
+}
+
+resource "azurerm_app_service_active_slot" "blue_green" {
+    resource_group_name   = azurerm_resource_group.blue_green.name
+    app_service_name      = azurerm_app_service.blue_green.name
+    app_service_slot_name = azurerm_app_service_slot.blue_green.name
 }
