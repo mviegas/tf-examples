@@ -13,7 +13,7 @@ This is required for interacting with an Azure Subscription through the ARM prov
 * Place your Azure Subscription Id into the .env file (there is a .env.example copy).
 * Navigate to the scripts folder.
 * Run `chmod +x create-az-sp-sh && ./create-az-sp.sh`.
-* After a while, this script will output a json containing an `appId`, `displayName`, `name`, `password` and `tenant`. Store this values under the `src/tf-az-blue-green/terraform.tfvars` file to keep secrets. This file is git ignored and contains sensitive values.
+* After a while, this script will output a json containing an `appId`, `displayName`, `name`, `password` and `tenant`. Store these values under the `src/tf-az-blue-green/terraform.tfvars` file to keep secrets. This file is git ignored and contains sensitive values.
 
 ### Setting up
 
